@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.db.models import Count
+from django.db.models import Count, Sum, F
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from ads.models import Ads
@@ -49,8 +49,11 @@ class AdsStatisticsListView(ListView):
     context_object_name = 'ads'
 
     def get_queryset(self):
-        queryset = super().get_queryset().annotate(
-            leads_count=Count('lead', distinct=True),
-            customers_count=Count('lead__customer', distinct=True),
+        queryset = super().get_queryset()
+        queryset = queryset.annotate(
+            leads_count=Count('lead'),
+            customers_count=Count('lead__customer'),
+            total_contract_cost=Sum('lead__customer__contract__cost'),
+            profit=F('total_contract_cost') - F('budget')
         )
         return queryset

@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from customers.models import Customer
+from leads.models import Lead
 
 
 class CustomersListView(PermissionRequiredMixin, ListView):
@@ -14,9 +15,14 @@ class CustomersListView(PermissionRequiredMixin, ListView):
 class CustomerCreateView(PermissionRequiredMixin, CreateView):
     permission_required = 'customers.add_customer'
     template_name = 'customers/customers-create.html'
-    queryset = Customer.objects.select_related('lead', 'contract')
+    model = Customer
     fields = 'lead', 'contract'
     success_url = reverse_lazy('customers:customers_list')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['lead'].queryset = Lead.objects.filter(customer__isnull=True)
+        return form
 
 
 class CustomerDetailsView(PermissionRequiredMixin, DetailView):
